@@ -1,0 +1,21 @@
+﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:SlidingTiles"
+             x:Class="SlidingTiles.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Add custom color resources -->
+            <Color x:Key="PrimaryBackground">#F5F5DC</Color> <!-- Beige background -->
+            <Color x:Key="PuzzleBackground">#8D6E63</Color> <!-- Brown -->
+            <Color x:Key="PuzzleBorder">#5D4037</Color> <!-- Darker brown -->
+            <Color x:Key="TileBackground">#FFD700</Color> <!-- Gold -->
+            <Color x:Key="TileText">#B22222</Color> <!-- FireBrick red -->
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

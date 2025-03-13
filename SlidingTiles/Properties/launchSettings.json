@@ -1,0 +1,24 @@
+{
+  "profiles": {
+    "Windows": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "nativeDebugging": false
+    },
+    "Windows (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Windows (Debug)": {
+      "commandName": "Project",
+      "executablePath": "dotnet",
+      "commandLineArgs": "run --project .\\SlidingTiles.csproj -f net9.0-windows10.0.19041.0",
+      "nativeDebugging": true
+    },
+    "Android": {
+      "commandName": "Project",
+      "executablePath": "dotnet",
+      "commandLineArgs": "run --project .\\SlidingTiles.csproj -f net9.0-android",
+      "nativeDebugging": true
+    }
+  }
+}

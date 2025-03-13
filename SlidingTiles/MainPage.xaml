@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:SlidingTiles"
+             x:Class="SlidingTiles.MainPage"
+             x:DataType="local:MainPage"
+             Title="Sliding Tiles Puzzle"
+             BackgroundColor="#F5F5DC">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="20">
+        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,25">
+            <Label 
+                Text="Sliding Tiles Puzzle"
+                FontSize="32"
+                TextColor="Black"
+                HorizontalOptions="Center" />
+            
+            <Label 
+                Text="{Binding StatusMessage}"
+                FontSize="20"
+                TextColor="Black"
+                HorizontalOptions="Center"
+                Margin="0,0,0,10" />
+
+            <!-- Improved size selection UI -->
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15" HorizontalOptions="Center">
+                <Label Text="Puzzle Size:" 
+                       VerticalOptions="Center" 
+                       FontSize="18" 
+                       TextColor="Black"
+                       Grid.Column="0" />
+                
+                <Picker x:Name="SizePicker" 
+                        FontSize="18"
+                        TextColor="White"
+                        BackgroundColor="Black"
+                        Opacity="0.9"
+                        SelectedIndexChanged="SizePicker_SelectedIndexChanged"
+                        WidthRequest="120"
+                        HeightRequest="50"
+                        Grid.Column="1"
+                        VerticalOptions="Center">
+                    <Picker.Items>
+                        <x:String>3×3</x:String>
+                        <x:String>4×4</x:String>
+                        <x:String>5×5</x:String>
+                        <x:String>6×6</x:String>
+                    </Picker.Items>
+                </Picker>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Puzzle grid with border and background -->
+        <Border Grid.Row="1" 
+                Stroke="#5D4037"
+                StrokeThickness="4" 
+                StrokeShape="Rectangle"
+                Margin="10"
+                HorizontalOptions="Center"
+                VerticalOptions="Center">
+            
+            <Border.Background>
+                <SolidColorBrush Color="#8D6E63"/>
+            </Border.Background>
+            
+            <!-- Make the grid dynamically sized -->
+            <Grid x:Name="GameGrid" 
+                  RowSpacing="5" ColumnSpacing="5"
+                  Padding="8"
+                  HorizontalOptions="Center"
+                  VerticalOptions="Center">
+                <!-- Grid definitions will be set programmatically -->
+            </Grid>
+        </Border>
+
+        <HorizontalStackLayout Grid.Row="2" 
+                               HorizontalOptions="Center" 
+                               Spacing="25" 
+                               Margin="0,30,0,0">
+            <Button Text="New Game" 
+                    Clicked="NewGame_Clicked"
+                    FontSize="18"
+                    HeightRequest="50"
+                    WidthRequest="140"
+                    Padding="10,5" />
+                    
+            <Button Text="Shuffle" 
+                    Clicked="Shuffle_Clicked" 
+                    FontSize="18"
+                    HeightRequest="50"
+                    WidthRequest="140"
+                    Padding="10,5" />
+        </HorizontalStackLayout>
+    </Grid>
+
+</ContentPage>
