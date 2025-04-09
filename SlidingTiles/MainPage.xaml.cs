@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using SlidingTiles.Models;
+using SlidingTiles.Extensions;
+using SlidingTiles.Services;
 
 namespace SlidingTiles
 {
@@ -42,6 +45,15 @@ namespace SlidingTiles
             SizePicker.SelectedIndex = 1; // Index 1 corresponds to 4×4
             
             InitializeTiles();
+            
+            // Automatically shuffle the board on startup using fire-and-forget pattern
+            // Since we can't use async directly in constructors
+            _ = Task.Run(async () => 
+            {
+                // Small delay to ensure UI is fully loaded before animation starts
+                await Task.Delay(100);
+                await Dispatcher.DispatchAsync(async () => await ShuffleBoard());
+            });
         }
 
         private void SizePicker_SelectedIndexChanged(object sender, EventArgs e)
@@ -122,25 +134,79 @@ namespace SlidingTiles
             // Increase the minimum size for better visibility
             int effectiveTileSize = Math.Max(60, tileSize);
             
+            // Calculate font size based on grid size
+            double fontSize = Math.Max(16, 28 - (gridSize - 3) * 3);
+            
+            // Create a standard Button with properties needed for game logic
             var tile = new Button
             {
-                Text = text,
-                FontSize = Math.Max(16, 28 - (gridSize - 3) * 3), // Improved font size calculation
+                Text = text, // Keep the text property for win checking
                 WidthRequest = effectiveTileSize,
                 HeightRequest = effectiveTileSize,
-                // Gold background with red text
                 BackgroundColor = Color.FromArgb("#FFD700"), // Gold color
+                FontSize = fontSize,
                 TextColor = Color.FromArgb("#B22222"), // FireBrick red
                 FontAttributes = FontAttributes.Bold,
-                Margin = new Thickness(2), // Add small margin between tiles
-                Padding = new Thickness(0) // Remove internal padding
+                Margin = new Thickness(2),
+                Padding = new Thickness(0),
+                BorderColor = Color.FromArgb("#B8860B"), // DarkGoldenrod for border
+                BorderWidth = 2,
+                CornerRadius = 4,
+                Shadow = new Shadow
+                {
+                    Brush = SolidColorBrush.Black,
+                    Offset = new Point(3, 3),
+                    Radius = 5,
+                    Opacity = 0.5f
+                }
             };
-
+            
+            // Add 3D text effect with custom renderer
+            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowColor(tile, 
+                Color.FromArgb("#8B0000")); // Darker red shadow
+            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOffset(tile, 
+                new Size(-1, -1)); // Offset creating 3D carved effect
+            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowRadius(tile, 0); // Sharp shadow
+            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOpacity(tile, 0.7f);
+            
+            // Visual states for enhanced 3D appearance when pressed
+            VisualStateManager.SetVisualStateGroups(tile, new VisualStateGroupList
+            {
+                new VisualStateGroup
+                {
+                    Name = "CommonStates",
+                    States =
+                    {
+                        new VisualState { Name = "Normal" },
+                        new VisualState
+                        {
+                            Name = "Pressed",
+                            Setters =
+                            {
+                                new Setter { Property = Button.BackgroundColorProperty, Value = Color.FromArgb("#E6C200") },
+                                new Setter { Property = Button.TranslationYProperty, Value = 1.0 },
+                                new Setter { Property = Button.ShadowProperty, 
+                                    Value = new Shadow
+                                    {
+                                        Brush = SolidColorBrush.Black,
+                                        Offset = new Point(1, 1),
+                                        Radius = 2,
+                                        Opacity = 0.3f
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Register click event for the button
             tile.Clicked += Tile_Clicked;
+            
             return tile;
         }
 
-        private void Tile_Clicked(object? sender, EventArgs e)
+        private async void Tile_Clicked(object? sender, EventArgs e)
         {
             if (sender is not Button clickedTile)
                 return;
@@ -165,7 +231,8 @@ namespace SlidingTiles
             // Check if the clicked tile is adjacent to the empty space
             if (IsAdjacent(row, col, emptyRow, emptyCol))
             {
-                MoveTile(row, col);
+                // Use the animated version for user interactions
+                await MoveTileAsync(row, col);
                 CheckWin();
             }
         }
@@ -176,11 +243,42 @@ namespace SlidingTiles
                    (Math.Abs(col1 - col2) == 1 && row1 == row2);
         }
 
-        private void MoveTile(int row, int col)
+        private async Task MoveTileAsync(int row, int col)
         {
             try 
             {
                 // Move the tile to empty position
+                if (tiles[row, col] != null && GameGrid != null)
+                {
+                    Button tileButton = tiles[row, col]!;
+                    
+                    // Calculate tile size to use for animation
+                    double tileSize = tileButton.Width > 0 ? tileButton.Width : Math.Max(60, 240 / gridSize);
+                    
+                    // Animate the tile movement
+                    await tileButton.SlideToPositionAsync(emptyRow, emptyCol, tileSize);
+                    
+                    // Update the tiles array after animation completes
+                    tiles[emptyRow, emptyCol] = tiles[row, col];
+                    tiles[row, col] = null;
+
+                    // Update the empty position
+                    emptyRow = row;
+                    emptyCol = col;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in MoveTileAsync: {ex.Message}");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        private void MoveTile(int row, int col)
+        {
+            try 
+            {
+                // Move the tile to empty position without animation (used for shuffling)
                 if (tiles[row, col] != null && GameGrid != null)
                 {
                     GameGrid.Remove(tiles[row, col]);
@@ -216,7 +314,14 @@ namespace SlidingTiles
                         continue;
                     
                     // Check if tile matches expected number
-                    if (tiles[row, col] == null || tiles[row, col]?.Text != expectedNumber.ToString())
+                    if (tiles[row, col] == null)
+                    {
+                        win = false;
+                        break;
+                    }
+                    
+                    // Check the text property directly, which we've kept for win checking
+                    if (tiles[row, col]!.Text != expectedNumber.ToString())
                     {
                         win = false;
                         break;
@@ -232,21 +337,24 @@ namespace SlidingTiles
             }
         }
 
-        private void NewGame_Clicked(object sender, EventArgs e)
+        private async void NewGame_Clicked(object sender, EventArgs e)
         {
             InitializeTiles();
+            await ShuffleBoard();
         }
 
-        private void Shuffle_Clicked(object sender, EventArgs e)
+        private async Task ShuffleBoard()
         {
             // Adjust number of moves based on grid size for better shuffling
             int moves = gridSize * gridSize * 5;
             
-            // Perform many random valid moves to shuffle
+            StatusMessage = "Shuffling...";
+            
+            // Perform random valid moves to shuffle
             for (int i = 0; i < moves; i++)
             {
                 // Get possible moves
-                List<(int row, int col)> possibleMoves = new List<(int row, int col)>();
+                List<(int row, int col)> possibleMoves = new();
                 
                 // Check all four directions
                 int[,] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
@@ -266,11 +374,40 @@ namespace SlidingTiles
                 if (possibleMoves.Count > 0)
                 {
                     var move = possibleMoves[random.Next(possibleMoves.Count)];
-                    MoveTile(move.row, move.col);
+                    
+                    // Use animation only for the last move to give visual feedback
+                    if (i == moves - 1)
+                    {
+                        await MoveTileAsync(move.row, move.col);
+                    }
+                    else
+                    {
+                        // Use the fast non-animated version for the rest
+                        MoveTile(move.row, move.col);
+                    }
                 }
             }
 
             StatusMessage = "Puzzle shuffled! Make your moves.";
+        }
+
+        private async void Shuffle_Clicked(object sender, EventArgs e)
+        {
+            // Disable the button while shuffling to prevent multiple clicks
+            Button? shuffleButton = null;
+            if (sender is Button button)
+            {
+                shuffleButton = button;
+                shuffleButton.IsEnabled = false;
+            }
+                
+            await ShuffleBoard();
+            
+            // Re-enable the button
+            if (shuffleButton != null)
+            {
+                shuffleButton.IsEnabled = true;
+            }
         }
 
         // INotifyPropertyChanged implementation

@@ -50,23 +50,28 @@
             </Grid>
         </VerticalStackLayout>
 
-        <!-- Puzzle grid with border and background -->
+        <!-- Puzzle grid with enhanced 3D border and background -->
         <Border Grid.Row="1" 
                 Stroke="#5D4037"
-                StrokeThickness="4" 
-                StrokeShape="Rectangle"
-                Margin="10"
+                StrokeThickness="8" 
+                StrokeShape="RoundRectangle 10"
+                Margin="20"
+                Padding="0"
                 HorizontalOptions="Center"
-                VerticalOptions="Center">
+                VerticalOptions="Center"
+                Shadow="{Shadow Brush={SolidColorBrush Black}, Offset='6,6', Radius=10, Opacity=0.7}">
             
             <Border.Background>
-                <SolidColorBrush Color="#8D6E63"/>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Offset="0.0" Color="#A1887F" />
+                    <GradientStop Offset="1.0" Color="#795548" />
+                </LinearGradientBrush>
             </Border.Background>
             
             <!-- Make the grid dynamically sized -->
             <Grid x:Name="GameGrid" 
                   RowSpacing="5" ColumnSpacing="5"
-                  Padding="8"
+                  Padding="12"
                   HorizontalOptions="Center"
                   VerticalOptions="Center">
                 <!-- Grid definitions will be set programmatically -->

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Maui;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.PlatformConfiguration;
 using System;
 using System.Diagnostics;
 
@@ -12,11 +13,11 @@ namespace SlidingTiles
             try
             {
                 InitializeComponent();
-                
-                // Set MainPage directly in constructor for compatibility with .NET MAUI preview
-                MainPage = new AppShell();
-                
-                Debug.WriteLine("App initialized successfully with MainPage set to AppShell");
+
+                // Remove the deprecated MainPage assignment
+                // MainPage = new AppShell();
+
+                Debug.WriteLine("App initialized successfully");
             }
             catch (Exception ex)
             {
@@ -25,19 +26,17 @@ namespace SlidingTiles
             }
         }
 
-        // Still implement CreateWindow for future compatibility
+        // Override CreateWindow method instead of setting MainPage directly
         protected override Window CreateWindow(IActivationState? activationState)
         {
             try
             {
                 Debug.WriteLine("CreateWindow called");
-                Window window = base.CreateWindow(activationState);
-                Debug.WriteLine("Base window created");
-                
-                // Make sure window has proper settings
-                window.Title = "Sliding Tiles Puzzle";
-                window.MinimumWidth = 400;
-                window.MinimumHeight = 600;
+                Window window = new Window(new AppShell());
+                Debug.WriteLine("Window created with AppShell");
+
+                // You can set additional window properties here if needed
+                // window.Title = "Sliding Tiles";
 
                 Debug.WriteLine("Window created and configured successfully");
                 return window;
