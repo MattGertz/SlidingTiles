@@ -8,13 +8,14 @@ using System.Threading.Tasks;
 using SlidingTiles.Models;
 using SlidingTiles.Extensions;
 using SlidingTiles.Services;
+using SlidingTiles.Controls;
 
 namespace SlidingTiles
 {
     public partial class MainPage : ContentPage, INotifyPropertyChanged
     {
         private int gridSize = 4; // Default size
-        private Button?[,] tiles;
+        private TexturedTile?[,] tiles;
         private int emptyRow, emptyCol;
         private Random random = new Random();
         private string statusMessage = "Start a new game!";
@@ -39,7 +40,7 @@ namespace SlidingTiles
             BindingContext = this;
             
             // Initialize with default grid size
-            tiles = new Button?[gridSize, gridSize];
+            tiles = new TexturedTile?[gridSize, gridSize];
             
             // Set default picker selection to 4×4
             SizePicker.SelectedIndex = 1; // Index 1 corresponds to 4×4
@@ -68,7 +69,7 @@ namespace SlidingTiles
             if (newSize != gridSize)
             {
                 gridSize = newSize;
-                tiles = new Button?[gridSize, gridSize];
+                tiles = new TexturedTile?[gridSize, gridSize];
                 InitializeTiles();
                 StatusMessage = $"New {gridSize}×{gridSize} game ready! Click 'Shuffle' to start.";
             }
@@ -109,7 +110,7 @@ namespace SlidingTiles
                         int tileNumber = row * gridSize + col + 1;
                         if (tileNumber < gridSize * gridSize)
                         {
-                            Button tile = CreateTile(tileNumber.ToString(), tileSize);
+                            TexturedTile tile = CreateTile(tileNumber.ToString(), tileSize);
                             tiles[row, col] = tile;
                             GameGrid.Add(tile, col, row);
                         }
@@ -132,74 +133,15 @@ namespace SlidingTiles
             }
         }
 
-        private Button CreateTile(string text, int tileSize)
+        private TexturedTile CreateTile(string text, int tileSize)
         {
             // Increase the minimum size for better visibility
             int effectiveTileSize = Math.Max(60, tileSize);
             
-            // Calculate font size based on grid size
-            double fontSize = Math.Max(16, 28 - (gridSize - 3) * 3);
+            // Create our custom TexturedTile that includes the gold leaf texture with wear patterns
+            var tile = new TexturedTile(text, effectiveTileSize, gridSize);
             
-            // Create the base tile with standard properties
-            var tile = new Button
-            {
-                Text = text, // Keep the text property for win checking
-                WidthRequest = effectiveTileSize,
-                HeightRequest = effectiveTileSize,
-                BackgroundColor = Color.FromArgb("#FFD700"), // Default gold color that will be varied
-                FontSize = fontSize,
-                TextColor = Color.FromArgb("#B22222"), // Default red text that will be varied
-                FontAttributes = FontAttributes.Bold,
-                Margin = new Thickness(2),
-                Padding = new Thickness(0),
-                BorderColor = Color.FromArgb("#B8860B"), // Default border color that will be varied
-                BorderWidth = 2,
-                CornerRadius = 4,
-                Shadow = new Shadow
-                {
-                    Brush = SolidColorBrush.Black,
-                    Offset = new Point(3, 3),
-                    Radius = 5,
-                    Opacity = 0.5f
-                }
-            };
-
-            // Apply our aging effects using the TileTextureGenerator service
-            TileTextureGenerator.ApplyAgingEffects(tile, text, gridSize);
-            
-            // Visual states for enhanced 3D appearance when pressed - using the actual current BackgroundColor
-            // which has been modified by the TileTextureGenerator
-            VisualStateManager.SetVisualStateGroups(tile, new VisualStateGroupList
-            {
-                new VisualStateGroup
-                {
-                    Name = "CommonStates",
-                    States =
-                    {
-                        new VisualState { Name = "Normal" },
-                        new VisualState
-                        {
-                            Name = "Pressed",
-                            Setters =
-                            {
-                                new Setter { Property = Button.BackgroundColorProperty, Value = tile.BackgroundColor.WithLuminosity(0.9f) }, // Darker when pressed, using float
-                                new Setter { Property = Button.TranslationYProperty, Value = 1.0 },
-                                new Setter { Property = Button.ShadowProperty, 
-                                    Value = new Shadow
-                                    {
-                                        Brush = SolidColorBrush.Black,
-                                        Offset = new Point(1, 1),
-                                        Radius = 2,
-                                        Opacity = 0.3f
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Register click event for the button
+            // Register click event for the tile
             tile.Clicked += Tile_Clicked;
             
             return tile;
@@ -207,7 +149,7 @@ namespace SlidingTiles
 
         private async void Tile_Clicked(object? sender, EventArgs e)
         {
-            if (sender is not Button clickedTile)
+            if (sender is not TexturedTile clickedTile)
                 return;
 
             int row = -1, col = -1;
@@ -249,7 +191,7 @@ namespace SlidingTiles
                 // Move the tile to empty position
                 if (tiles[row, col] != null && GameGrid != null)
                 {
-                    Button tileButton = tiles[row, col]!;
+                    TexturedTile tileButton = tiles[row, col]!;
                     
                     // Calculate tile size to use for animation
                     double tileSize = tileButton.Width > 0 ? tileButton.Width : Math.Max(60, 240 / gridSize);
@@ -319,7 +261,7 @@ namespace SlidingTiles
                         break;
                     }
                     
-                    // Check the text property directly, which we've kept for win checking
+                    // Check the text property
                     if (tiles[row, col]!.Text != expectedNumber.ToString())
                     {
                         win = false;
