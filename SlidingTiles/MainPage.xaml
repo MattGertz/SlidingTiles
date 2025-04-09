@@ -62,19 +62,31 @@
                 Shadow="{Shadow Brush={SolidColorBrush Black}, Offset='6,6', Radius=10, Opacity=0.7}">
             
             <Border.Background>
+                <!-- Enhanced background with more varied colors to simulate aging -->
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Offset="0.0" Color="#A1887F" />
-                    <GradientStop Offset="1.0" Color="#795548" />
+                    <GradientStop Offset="0.3" Color="#8D6E63" />
+                    <GradientStop Offset="0.5" Color="#795548" />
+                    <GradientStop Offset="0.7" Color="#6D4C41" />
+                    <GradientStop Offset="0.9" Color="#5D4037" />
+                    <GradientStop Offset="1.0" Color="#4E342E" />
                 </LinearGradientBrush>
             </Border.Background>
-            
-            <!-- Make the grid dynamically sized -->
-            <Grid x:Name="GameGrid" 
-                  RowSpacing="5" ColumnSpacing="5"
-                  Padding="12"
-                  HorizontalOptions="Center"
-                  VerticalOptions="Center">
-                <!-- Grid definitions will be set programmatically -->
+
+            <Grid>
+                <!-- Using GraphicsView for procedural aging effects -->
+                <GraphicsView x:Name="BoardAgeEffects"
+                             HorizontalOptions="Fill"
+                             VerticalOptions="Fill" />
+                
+                <!-- Make the grid dynamically sized -->
+                <Grid x:Name="GameGrid" 
+                      RowSpacing="5" ColumnSpacing="5"
+                      Padding="12"
+                      HorizontalOptions="Center"
+                      VerticalOptions="Center">
+                    <!-- Grid definitions will be set programmatically -->
+                </Grid>
             </Grid>
         </Border>
 

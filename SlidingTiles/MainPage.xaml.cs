@@ -44,6 +44,9 @@ namespace SlidingTiles
             // Set default picker selection to 4×4
             SizePicker.SelectedIndex = 1; // Index 1 corresponds to 4×4
             
+            // Set the board's aging effects drawable
+            BoardAgeEffects.Drawable = TileTextureGenerator.CreateAgedBoardDrawable();
+            
             InitializeTiles();
             
             // Automatically shuffle the board on startup using fire-and-forget pattern
@@ -137,19 +140,19 @@ namespace SlidingTiles
             // Calculate font size based on grid size
             double fontSize = Math.Max(16, 28 - (gridSize - 3) * 3);
             
-            // Create a standard Button with properties needed for game logic
+            // Create the base tile with standard properties
             var tile = new Button
             {
                 Text = text, // Keep the text property for win checking
                 WidthRequest = effectiveTileSize,
                 HeightRequest = effectiveTileSize,
-                BackgroundColor = Color.FromArgb("#FFD700"), // Gold color
+                BackgroundColor = Color.FromArgb("#FFD700"), // Default gold color that will be varied
                 FontSize = fontSize,
-                TextColor = Color.FromArgb("#B22222"), // FireBrick red
+                TextColor = Color.FromArgb("#B22222"), // Default red text that will be varied
                 FontAttributes = FontAttributes.Bold,
                 Margin = new Thickness(2),
                 Padding = new Thickness(0),
-                BorderColor = Color.FromArgb("#B8860B"), // DarkGoldenrod for border
+                BorderColor = Color.FromArgb("#B8860B"), // Default border color that will be varied
                 BorderWidth = 2,
                 CornerRadius = 4,
                 Shadow = new Shadow
@@ -160,16 +163,12 @@ namespace SlidingTiles
                     Opacity = 0.5f
                 }
             };
+
+            // Apply our aging effects using the TileTextureGenerator service
+            TileTextureGenerator.ApplyAgingEffects(tile, text, gridSize);
             
-            // Add 3D text effect with custom renderer
-            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowColor(tile, 
-                Color.FromArgb("#8B0000")); // Darker red shadow
-            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOffset(tile, 
-                new Size(-1, -1)); // Offset creating 3D carved effect
-            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowRadius(tile, 0); // Sharp shadow
-            Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOpacity(tile, 0.7f);
-            
-            // Visual states for enhanced 3D appearance when pressed
+            // Visual states for enhanced 3D appearance when pressed - using the actual current BackgroundColor
+            // which has been modified by the TileTextureGenerator
             VisualStateManager.SetVisualStateGroups(tile, new VisualStateGroupList
             {
                 new VisualStateGroup
@@ -183,7 +182,7 @@ namespace SlidingTiles
                             Name = "Pressed",
                             Setters =
                             {
-                                new Setter { Property = Button.BackgroundColorProperty, Value = Color.FromArgb("#E6C200") },
+                                new Setter { Property = Button.BackgroundColorProperty, Value = tile.BackgroundColor.WithLuminosity(0.9f) }, // Darker when pressed, using float
                                 new Setter { Property = Button.TranslationYProperty, Value = 1.0 },
                                 new Setter { Property = Button.ShadowProperty, 
                                     Value = new Shadow
