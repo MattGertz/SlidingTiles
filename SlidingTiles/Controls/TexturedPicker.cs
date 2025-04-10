@@ -122,6 +122,15 @@ namespace SlidingTiles.Controls
             
             _picker.TextColor = Color.FromRgba(textR, textG, textB, (byte)255);
             
+            // Add a more pronounced text shadow effect for better visibility
+            _picker.Shadow = new Shadow
+            {
+                Brush = new SolidColorBrush(Color.FromRgba(0, 0, 0, 180)),
+                Offset = new Point(1.5, 1.5),
+                Radius = 3,
+                Opacity = 0.7f
+            };
+            
             // Add shadow effects for carved appearance
             var shadowOffset = new Size(
                 -1 + (rnd.NextDouble() * 0.4 - 0.2),

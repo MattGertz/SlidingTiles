@@ -16,27 +16,51 @@
                InputTransparent="True"
                Grid.RowSpan="3" />
                
-        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,25">
+        <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,20,0,25">
             <Label 
                 Text="Sliding Tiles Puzzle"
                 FontSize="32"
-                TextColor="Black"
-                HorizontalOptions="Center" />
+                FontFamily="Times New Roman"
+                TextColor="#3A2410"
+                HorizontalOptions="Center">
+                <Label.Shadow>
+                    <Shadow Brush="#8B4513" 
+                            Offset="-0.5,-0.5" 
+                            Radius="1.5" 
+                            Opacity="0.8" />
+                </Label.Shadow>
+            </Label>
             
             <Label 
                 Text="{Binding StatusMessage}"
                 FontSize="20"
-                TextColor="Black"
+                FontFamily="Times New Roman"
+                TextColor="#3A2410"
                 HorizontalOptions="Center"
-                Margin="0,0,0,10" />
+                Margin="0,0,0,10">
+                <Label.Shadow>
+                    <Shadow Brush="#8B4513" 
+                            Offset="-0.5,-0.5" 
+                            Radius="1.5" 
+                            Opacity="0.8" />
+                </Label.Shadow>
+            </Label>
 
             <!-- Improved size selection UI -->
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15" HorizontalOptions="Center">
                 <Label Text="Puzzle Size:" 
                        VerticalOptions="Center" 
                        FontSize="18" 
-                       TextColor="Black"
-                       Grid.Column="0" />
+                       FontFamily="Times New Roman"
+                       TextColor="#3A2410"
+                       Grid.Column="0">
+                    <Label.Shadow>
+                        <Shadow Brush="#8B4513" 
+                                Offset="-0.5,-0.5" 
+                                Radius="1.5" 
+                                Opacity="0.8" />
+                    </Label.Shadow>
+                </Label>
                 
                 <controls:TexturedPicker x:Name="SizePicker" 
                                          WidthRequest="120"
