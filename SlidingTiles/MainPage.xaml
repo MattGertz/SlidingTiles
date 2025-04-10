@@ -38,23 +38,11 @@
                        TextColor="Black"
                        Grid.Column="0" />
                 
-                <Picker x:Name="SizePicker" 
-                        FontSize="18"
-                        TextColor="White"
-                        BackgroundColor="Black"
-                        Opacity="0.9"
-                        SelectedIndexChanged="SizePicker_SelectedIndexChanged"
-                        WidthRequest="120"
-                        HeightRequest="50"
-                        Grid.Column="1"
-                        VerticalOptions="Center">
-                    <Picker.Items>
-                        <x:String>3×3</x:String>
-                        <x:String>4×4</x:String>
-                        <x:String>5×5</x:String>
-                        <x:String>6×6</x:String>
-                    </Picker.Items>
-                </Picker>
+                <controls:TexturedPicker x:Name="SizePicker" 
+                                         WidthRequest="120"
+                                         HeightRequest="50"
+                                         Grid.Column="1"
+                                         VerticalOptions="Center" />
             </Grid>
         </VerticalStackLayout>
 
@@ -106,7 +94,8 @@
             <Border x:Name="ShuffleButtonFrame"
                    Padding="0" 
                    StrokeShape="RoundRectangle 4"
-                   Stroke="#B8860B"
+                   Stroke="#5D4037"
+                   StrokeThickness="3"
                    BackgroundColor="Transparent"
                    WidthRequest="140"
                    HeightRequest="50"

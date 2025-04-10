@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using SlidingTiles.Handlers;
 using System.Diagnostics;
 
 namespace SlidingTiles
@@ -21,6 +22,9 @@ namespace SlidingTiles
 #if DEBUG
             builder.Logging.AddDebug().SetMinimumLevel(LogLevel.Trace);
 #endif
+
+            // Register our custom picker handler for chevron color customization
+            PickerHandlerCustomization.CustomizePickerHandler();
 
             Debug.WriteLine("MauiApp building completed");
             return builder.Build();

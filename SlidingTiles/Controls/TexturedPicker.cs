@@ -1,454 +1,177 @@
-﻿using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;
+using Microsoft.Maui.Controls.Shapes;
+using Microsoft.Maui.Graphics;
+using SlidingTiles.Services;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using SlidingTiles.Models;
-using SlidingTiles.Extensions;
-using SlidingTiles.Services;
-using SlidingTiles.Controls;
-using Microsoft.Maui.Graphics;
+using System.Linq;
+using Microsoft.Maui.Handlers;
 
-namespace SlidingTiles
+namespace SlidingTiles.Controls
 {
-    public partial class MainPage : ContentPage, INotifyPropertyChanged
+    /// <summary>
+    /// A ContentView that combines a Picker with a textured background for realistic gold leaf appearance
+    /// </summary>
+    public class TexturedPicker : ContentView
     {
-        private int gridSize = 4; // Default size
-        private TexturedTile?[,] tiles;
-        private int emptyRow, emptyCol;
-        private Random random = new Random();
-        private string statusMessage = "Start a new game!";
-        private const int MinTileSize = 40; // Minimum tile size in pixels
-
-        public string StatusMessage
+        private readonly Microsoft.Maui.Controls.Picker _picker;
+        private readonly GraphicsView _textureView;
+        private readonly Border _border;
+        
+        // Expose necessary Picker properties
+        public IList<string> Items 
         {
-            get => statusMessage;
-            set
+            get => _picker.ItemsSource?.Cast<string>().ToList() ?? new List<string>();
+            set 
             {
-                if (statusMessage != value)
+                if (value != null)
                 {
-                    statusMessage = value;
-                    OnPropertyChanged();
+                    // Explicit cast to System.Collections.IList as required by the Picker's ItemsSource property
+                    _picker.ItemsSource = (System.Collections.IList)value;
                 }
             }
         }
-
-        public MainPage()
+        
+        public int SelectedIndex
         {
-            InitializeComponent();
-            BindingContext = this;
-            
-            // Initialize with default grid size
-            tiles = new TexturedTile?[gridSize, gridSize];
-            
-            // Initialize the custom TexturedPicker with grid size options
-            SizePicker.Items = new List<string> { "3×3", "4×4", "5×5", "6×6" };
-            SizePicker.SelectedIndex = 1; // Index 1 corresponds to 4×4
-            SizePicker.SelectedIndexChanged += SizePicker_SelectedIndexChanged;
-            
-            // Set the board's aging effects drawable
-            BoardAgeEffects.Drawable = TileTextureGenerator.CreateAgedBoardDrawable();
-            
-            // Apply gold leaf texture to the Shuffle button
-            ShuffleButtonTexture.Drawable = new ShuffleButtonDrawable();
-            
-            // Apply text effects to the Shuffle button to match the tile style
-            ApplyShuffleButtonEffects();
-            
-            InitializeTiles();
-            
-            // Automatically shuffle the board on startup using fire-and-forget pattern
-            // Since we can't use async directly in constructors
-            _ = Task.Run(async () => 
-            {
-                // Small delay to ensure UI is fully loaded before animation starts
-                await Task.Delay(100);
-                await Dispatcher.DispatchAsync(async () => await ShuffleBoard());
-            });
+            get => _picker.SelectedIndex;
+            set => _picker.SelectedIndex = value;
         }
-
-        /// <summary>
-        /// Applies text effects to the Shuffle button to match the tile aesthetic
-        /// </summary>
-        private void ApplyShuffleButtonEffects()
+        
+        public string SelectedItem
         {
-            // Create consistent randomness for the button effects
-            Random rnd = new Random(42); // Fixed seed for consistent appearance
-            
-            // Apply pressed-state visual effects to the button
-            VisualStateManager.SetVisualStateGroups(ShuffleButton, new VisualStateGroupList
+            get => _picker.SelectedItem?.ToString() ?? string.Empty;
+        }
+        
+        // Forward the SelectedIndexChanged event
+        public event EventHandler SelectedIndexChanged
+        {
+            add => _picker.SelectedIndexChanged += value;
+            remove => _picker.SelectedIndexChanged -= value;
+        }
+        
+        public TexturedPicker()
+        {
+            // Create a Grid to host the texture and picker
+            var grid = new Grid
             {
-                new VisualStateGroup
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+            
+            // Add border with matching brown color
+            _border = new Border
+            {
+                StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(4) },
+                Stroke = Color.FromArgb("#5D4037"),
+                StrokeThickness = 3,
+                Padding = 0,
+                Shadow = new Shadow
                 {
-                    Name = "CommonStates",
-                    States =
-                    {
-                        new VisualState { Name = "Normal" },
-                        new VisualState
-                        {
-                            Name = "Pressed",
-                            Setters =
-                            {
-                                new Setter { Property = Button.TranslationYProperty, Value = 1.0 },
-                                new Setter { Property = Button.ShadowProperty, 
-                                    Value = new Shadow
-                                    {
-                                        Brush = SolidColorBrush.Black,
-                                        Offset = new Point(1, 1),
-                                        Radius = 2,
-                                        Opacity = 0.3f
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Vary text color to simulate faded or oxidized engraving (like in TexturedTile)
+                    Brush = SolidColorBrush.Black,
+                    Offset = new Point(3, 3),
+                    Radius = 5,
+                    Opacity = 0.5f
+                },
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+            
+            // Create the texture view with gold leaf drawable
+            _textureView = new GraphicsView
+            {
+                Drawable = new GoldLeafPickerDrawable(),
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+            
+            // Create the picker with transparent background
+            _picker = new Microsoft.Maui.Controls.Picker
+            {
+                BackgroundColor = Colors.Transparent,
+                TextColor = Color.FromArgb("#B22222"),  // Match TexturedTile text color
+                FontAttributes = FontAttributes.Bold,
+                FontSize = 18,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill
+            };
+            
+            // Apply text effects similar to TexturedTile
+            ApplyTextEffects();
+            
+            // Set custom property for platform-specific styling
+            _picker.SetValue(CustomPickerProperties.ChevronColorProperty, Color.FromArgb("#5D4037"));
+            
+            // Assemble the components
+            grid.Add(_textureView);
+            grid.Add(_picker);
+            
+            _border.Content = grid;
+            Content = _border;
+        }
+        
+        private void ApplyTextEffects()
+        {
+            // Apply similar text effects as in TexturedTile and ShuffleButton
+            Random rnd = new Random(42);
+            
+            // Vary text color like the tiles
             byte textR = (byte)Math.Clamp(178 + rnd.Next(-40, 20), 138, 198);
             byte textG = (byte)Math.Clamp(34 + rnd.Next(-20, 30), 14, 64);
             byte textB = (byte)Math.Clamp(34 + rnd.Next(-20, 10), 14, 44);
             
-            ShuffleButton.TextColor = Color.FromRgba(textR, textG, textB, (byte)255);
-
-            // Add subtle shadow offset for carved text appearance
+            _picker.TextColor = Color.FromRgba(textR, textG, textB, (byte)255);
+            
+            // Add shadow effects for carved appearance
             var shadowOffset = new Size(
-                -1 + (rnd.NextDouble() * 0.4 - 0.2), 
+                -1 + (rnd.NextDouble() * 0.4 - 0.2),
                 -1 + (rnd.NextDouble() * 0.4 - 0.2));
-
+                
             Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowColor(
-                ShuffleButton, 
+                _picker, 
                 Color.FromRgba((byte)139, (byte)0, (byte)0, (byte)rnd.Next(140, 200)));
                 
             Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOffset(
-                ShuffleButton, 
+                _picker,
                 shadowOffset);
                 
             Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowRadius(
-                ShuffleButton, 
+                _picker,
                 (float)(rnd.NextDouble() * 0.5));
                 
             Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.VisualElement.SetShadowOpacity(
-                ShuffleButton, 
+                _picker,
                 (float)(0.6 + rnd.NextDouble() * 0.2));
         }
+    }
 
-        private async void SizePicker_SelectedIndexChanged(object? sender, EventArgs e)
-        {
-            // Get the new grid size from picker
-            int newSize = SizePicker.SelectedIndex + 3; // 3×3, 4×4, 5×5, 6×6
+    // Define custom property for chevron color
+    public static class CustomPickerProperties
+    {
+        public static readonly BindableProperty ChevronColorProperty = 
+            BindableProperty.CreateAttached("ChevronColor", typeof(Color), typeof(CustomPickerProperties), Colors.White);
             
-            // If size has changed, reinitialize the game
-            if (newSize != gridSize)
-            {
-                gridSize = newSize;
-                tiles = new TexturedTile?[gridSize, gridSize];
-                InitializeTiles();
-                StatusMessage = $"New {gridSize}×{gridSize} game. Shuffling tiles...";
-                
-                // Automatically shuffle the board when size changes
-                await ShuffleBoard();
-            }
-        }
-
-        private void InitializeTiles()
+        public static Color GetChevronColor(BindableObject view)
         {
-            try
-            {
-                if (GameGrid == null)
-                {
-                    Debug.WriteLine("ERROR: GameGrid is null in InitializeTiles");
-                    return;
-                }
-
-                // Clear any existing tiles
-                GameGrid.Clear();
-                
-                // Reset grid definitions
-                GameGrid.RowDefinitions.Clear();
-                GameGrid.ColumnDefinitions.Clear();
-                
-                // Create new row and column definitions based on gridSize
-                for (int i = 0; i < gridSize; i++)
-                {
-                    GameGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Star });
-                    GameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
-                }
-
-                // Calculate tile size based on grid size - increased base size
-                int tileSize = Math.Max(60, 240 / gridSize);
-
-                // Create new tiles
-                for (int row = 0; row < gridSize; row++)
-                {
-                    for (int col = 0; col < gridSize; col++)
-                    {
-                        int tileNumber = row * gridSize + col + 1;
-                        if (tileNumber < gridSize * gridSize)
-                        {
-                            TexturedTile tile = CreateTile(tileNumber.ToString(), tileSize);
-                            tiles[row, col] = tile;
-                            GameGrid.Add(tile, col, row);
-                        }
-                        else
-                        {
-                            // This is the empty spot
-                            tiles[row, col] = null;
-                            emptyRow = row;
-                            emptyCol = col;
-                        }
-                    }
-                }
-
-                StatusMessage = $"Game ready! Click 'Shuffle' to start.";
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in InitializeTiles: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-            }
+            return (Color)view.GetValue(ChevronColorProperty);
         }
-
-        private TexturedTile CreateTile(string text, int tileSize)
-        {
-            // Increase the minimum size for better visibility
-            int effectiveTileSize = Math.Max(60, tileSize);
             
-            // Create our custom TexturedTile that includes the gold leaf texture with wear patterns
-            var tile = new TexturedTile(text, effectiveTileSize, gridSize);
-            
-            // Register click event for the tile
-            tile.Clicked += Tile_Clicked;
-            
-            return tile;
-        }
-
-        private async void Tile_Clicked(object? sender, EventArgs e)
+        public static void SetChevronColor(BindableObject view, Color value)
         {
-            if (sender is not TexturedTile clickedTile)
-                return;
-
-            int row = -1, col = -1;
-
-            // Find the clicked tile position
-            for (int r = 0; r < gridSize; r++)
-            {
-                for (int c = 0; c < gridSize; c++)
-                {
-                    if (tiles[r, c] == clickedTile)
-                    {
-                        row = r;
-                        col = c;
-                        break;
-                    }
-                }
-                if (row != -1) break;
-            }
-
-            // Check if the clicked tile is adjacent to the empty space
-            if (IsAdjacent(row, col, emptyRow, emptyCol))
-            {
-                // Use the animated version for user interactions
-                await MoveTileAsync(row, col);
-                CheckWin();
-            }
-        }
-
-        private bool IsAdjacent(int row1, int col1, int row2, int col2)
-        {
-            return (Math.Abs(row1 - row2) == 1 && col1 == col2) || 
-                   (Math.Abs(col1 - col2) == 1 && row1 == row2);
-        }
-
-        private async Task MoveTileAsync(int row, int col)
-        {
-            try 
-            {
-                // Move the tile to empty position
-                if (tiles[row, col] != null && GameGrid != null)
-                {
-                    TexturedTile tileButton = tiles[row, col]!;
-                    
-                    // Calculate tile size to use for animation
-                    double tileSize = tileButton.Width > 0 ? tileButton.Width : Math.Max(60, 240 / gridSize);
-                    
-                    // Animate the tile movement
-                    await tileButton.SlideToPositionAsync(emptyRow, emptyCol, tileSize);
-                    
-                    // Update the tiles array after animation completes
-                    tiles[emptyRow, emptyCol] = tiles[row, col];
-                    tiles[row, col] = null;
-
-                    // Update the empty position
-                    emptyRow = row;
-                    emptyCol = col;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in MoveTileAsync: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-            }
-        }
-
-        private void MoveTile(int row, int col)
-        {
-            try 
-            {
-                // Move the tile to empty position without animation (used for shuffling)
-                if (tiles[row, col] != null && GameGrid != null)
-                {
-                    GameGrid.Remove(tiles[row, col]);
-                    GameGrid.Add(tiles[row, col], emptyCol, emptyRow);
-
-                    // Update the tiles array
-                    tiles[emptyRow, emptyCol] = tiles[row, col];
-                    tiles[row, col] = null;
-
-                    // Update the empty position
-                    emptyRow = row;
-                    emptyCol = col;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in MoveTile: {ex.Message}");
-            }
-        }
-
-        private void CheckWin()
-        {
-            bool win = true;
-            
-            for (int row = 0; row < gridSize; row++)
-            {
-                for (int col = 0; col < gridSize; col++)
-                {
-                    int expectedNumber = row * gridSize + col + 1;
-                    
-                    // Skip the empty space
-                    if (expectedNumber == gridSize * gridSize)
-                        continue;
-                    
-                    // Check if tile matches expected number
-                    if (tiles[row, col] == null)
-                    {
-                        win = false;
-                        break;
-                    }
-                    
-                    // Check the text property
-                    if (tiles[row, col]!.Text != expectedNumber.ToString())
-                    {
-                        win = false;
-                        break;
-                    }
-                }
-                if (!win) break;
-            }
-
-            if (win)
-            {
-                StatusMessage = "Congratulations! You win!";
-                DisplayAlert("Victory!", $"You solved the {gridSize}×{gridSize} puzzle!", "OK");
-            }
-        }
-
-        private async void NewGame_Clicked(object sender, EventArgs e)
-        {
-            InitializeTiles();
-            await ShuffleBoard();
-        }
-
-        private async Task ShuffleBoard()
-        {
-            // Adjust number of moves based on grid size for better shuffling
-            int moves = gridSize * gridSize * 5;
-            
-            StatusMessage = "Shuffling...";
-            
-            // Perform random valid moves to shuffle
-            for (int i = 0; i < moves; i++)
-            {
-                // Get possible moves
-                List<(int row, int col)> possibleMoves = new();
-                
-                // Check all four directions
-                int[,] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
-                
-                for (int d = 0; d < 4; d++)
-                {
-                    int newRow = emptyRow + directions[d, 0];
-                    int newCol = emptyCol + directions[d, 1];
-                    
-                    if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize)
-                    {
-                        possibleMoves.Add((newRow, newCol));
-                    }
-                }
-                
-                // Pick a random valid move
-                if (possibleMoves.Count > 0)
-                {
-                    var move = possibleMoves[random.Next(possibleMoves.Count)];
-                    
-                    // Use animation only for the last move to give visual feedback
-                    if (i == moves - 1)
-                    {
-                        await MoveTileAsync(move.row, move.col);
-                    }
-                    else
-                    {
-                        // Use the fast non-animated version for the rest
-                        MoveTile(move.row, move.col);
-                    }
-                }
-            }
-
-            StatusMessage = "Puzzle shuffled! Make your moves.";
-        }
-
-        private async void Shuffle_Clicked(object sender, EventArgs e)
-        {
-            // Disable the button while shuffling to prevent multiple clicks
-            Button? shuffleButton = null;
-            if (sender is Button button)
-            {
-                shuffleButton = button;
-                shuffleButton.IsEnabled = false;
-            }
-                
-            await ShuffleBoard();
-            
-            // Re-enable the button
-            if (shuffleButton != null)
-            {
-                shuffleButton.IsEnabled = true;
-            }
-        }
-
-        // INotifyPropertyChanged implementation
-        public new event PropertyChangedEventHandler? PropertyChanged;
-
-        protected new virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            view.SetValue(ChevronColorProperty, value);
         }
     }
 
     /// <summary>
-    /// Drawable for the Shuffle button that renders a gold leaf appearance with wear patterns
+    /// Drawable for the Picker that renders a gold leaf appearance with wear patterns
     /// to match the tile aesthetic
     /// </summary>
-    internal class ShuffleButtonDrawable : IDrawable
+    internal class GoldLeafPickerDrawable : IDrawable
     {
         private readonly Color _baseGold;
         private readonly Random _rnd;
         
-        public ShuffleButtonDrawable()
+        public GoldLeafPickerDrawable()
         {
             _baseGold = Color.FromRgba((byte)255, (byte)215, (byte)0, (byte)255); // Standard gold color
             _rnd = new Random(99); // Fixed seed for consistent appearance
@@ -460,8 +183,8 @@ namespace SlidingTiles
             canvas.FillColor = _baseGold;
             canvas.FillRectangle(dirtyRect);
             
-            // Calculate appropriate settings based on button size
-            int speckCount = 40 + _rnd.Next(-10, 20); // Number of specks/dots
+            // Calculate appropriate settings based on control size
+            int speckCount = 30 + _rnd.Next(-10, 20); // Number of specks/dots
             float maxSpeckSize = Math.Max(1.5f, dirtyRect.Width / 30); // Maximum speck size
             
             // Draw underlying texture (subtle variation in gold)
@@ -557,7 +280,7 @@ namespace SlidingTiles
         private void DrawCrackleLines(ICanvas canvas, RectF dirtyRect)
         {
             // Draw fine crackle lines in the gold leaf
-            int lineCount = 5 + _rnd.Next(-2, 3); // Number of major crackle lines
+            int lineCount = 4 + _rnd.Next(-2, 3); // Number of major crackle lines
             
             canvas.StrokeSize = 0.5f;
             
@@ -592,7 +315,7 @@ namespace SlidingTiles
                 }
                 else
                 {
-                    // Start from somewhere in the button
+                    // Start from somewhere in the control
                     startX = (float)(_rnd.NextDouble() * dirtyRect.Width);
                     startY = (float)(_rnd.NextDouble() * dirtyRect.Height);
                 }
