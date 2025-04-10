@@ -1,6 +1,6 @@
 # Sliding Tiles Puzzle
 
-<img src="SlidingTiles/Resources/Images/SlidingTiles.jpg" alt="Sliding Tiles Screenshot" width="600"/>
+<img src="SlidingTiles/Resources/Images/slidingtiles.jpg" alt="Sliding Tiles Screenshot" width="600"/>
 
 ## About This Project
 
