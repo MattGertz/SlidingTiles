@@ -13,8 +13,7 @@
                HorizontalOptions="Fill" 
                VerticalOptions="Fill"
                InputTransparent="True"
-               Grid.RowSpan="3"
-               Grid.ZIndex="-1" />
+               Grid.RowSpan="3" />
                
         <VerticalStackLayout Grid.Row="0" Spacing="15" Margin="0,0,0,25">
             <Label 
@@ -101,14 +100,7 @@
         <HorizontalStackLayout Grid.Row="2" 
                                HorizontalOptions="Center" 
                                Spacing="25" 
-                               Margin="0,30,0,0">
-            <Button Text="New Game" 
-                    Clicked="NewGame_Clicked"
-                    FontSize="18"
-                    HeightRequest="50"
-                    WidthRequest="140"
-                    Padding="10,5" />
-                    
+                               Margin="0,30,0,20">
             <Button Text="Shuffle" 
                     Clicked="Shuffle_Clicked" 
                     FontSize="18"
