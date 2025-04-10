@@ -1,7 +1,5 @@
 # Sliding Tiles Puzzle
 
-![Sliding Tiles Puzzle](SlidingTiles/Resources/AppIcon/appicon.svg)
-
 <img src="SlidingTiles/Resources/Images/SlidingTiles.jpg" alt="Sliding Tiles Screenshot" width="600"/>
 
 ## About This Project
