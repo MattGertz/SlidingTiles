@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:SlidingTiles"
+             xmlns:controls="clr-namespace:SlidingTiles.Controls"
              x:Class="SlidingTiles.MainPage"
              x:DataType="local:MainPage"
              Title="Sliding Tiles Puzzle">
@@ -101,12 +102,35 @@
                                HorizontalOptions="Center" 
                                Spacing="25" 
                                Margin="0,30,0,20">
-            <Button Text="Shuffle" 
-                    Clicked="Shuffle_Clicked" 
-                    FontSize="18"
-                    HeightRequest="50"
-                    WidthRequest="140"
-                    Padding="10,5" />
+            <!-- Styled gilded Shuffle button matching the tile aesthetic -->
+            <Border x:Name="ShuffleButtonFrame"
+                   Padding="0" 
+                   StrokeShape="RoundRectangle 4"
+                   Stroke="#B8860B"
+                   BackgroundColor="Transparent"
+                   WidthRequest="140"
+                   HeightRequest="50"
+                   Shadow="{Shadow Brush={SolidColorBrush Black}, Offset='3,3', Radius=5, Opacity=0.5}">
+                <Grid>
+                    <!-- Gold texture background -->
+                    <GraphicsView x:Name="ShuffleButtonTexture"
+                                 HorizontalOptions="Fill"
+                                 VerticalOptions="Fill" />
+                    
+                    <!-- The actual button with transparent background -->
+                    <Button x:Name="ShuffleButton" 
+                            Text="Shuffle" 
+                            Clicked="Shuffle_Clicked" 
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            TextColor="#B22222"
+                            BackgroundColor="Transparent"
+                            BorderColor="Transparent"
+                            Padding="10,5"
+                            VerticalOptions="Fill"
+                            HorizontalOptions="Fill" />
+                </Grid>
+            </Border>
         </HorizontalStackLayout>
     </Grid>
 
