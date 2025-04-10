@@ -6,6 +6,8 @@ using SlidingTiles.Controls;
 using Android.Graphics;
 using AndroidX.AppCompat.Widget;
 using Microsoft.Maui.Controls.Platform;
+using Microsoft.Maui.Platform;
+using Microsoft.Maui.Controls.Compatibility.Platform.Android;
 #elif WINDOWS
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -29,29 +31,56 @@ namespace SlidingTiles.Handlers
                 if (picker is null || handler.PlatformView is null)
                     return;
 
-                // Get the chevron color from attached property
-                var customColor = Color.FromArgb("#5D4037"); // Use direct value for reliability
+                // Get the chevron color from attached property - using fully qualified name to resolve ambiguity
+                var customColor = Microsoft.Maui.Graphics.Color.FromArgb("#5D4037"); // Use direct value for reliability
                 
                 // Get the Android platform view
-                var editText = handler.PlatformView;
+                var platformView = handler.PlatformView;
                 
-                // Set the dropdown arrow color
-                if (editText is AppCompatSpinner spinner)
-                {
-                    // Convert the MAUI color to Android color
-                    var androidColor = customColor.ToAndroid();
+                // Convert the MAUI color to Android color
+                int androidColor = (int)(new Android.Graphics.Color(
+                    (byte)(customColor.Red * 255),
+                    (byte)(customColor.Green * 255),
+                    (byte)(customColor.Blue * 255),
+                    (byte)(customColor.Alpha * 255)
+                ));
+                
+                try {
+                    // Try to access the native EditText control inside the platform view
+                    var property = platformView.GetType().GetProperty("EditText");
+                    Android.Widget.EditText? editText = null;
                     
-                    // Use reflection to get the dropdown arrow drawable
-                    var method = spinner.Class.GetDeclaredMethod("getDropDownArrowDrawable");
-                    if (method != null)
+                    if (property != null)
                     {
-                        method.Accessible = true;
-                        var drawable = method.Invoke(spinner);
-                        if (drawable is Android.Graphics.Drawables.Drawable arrow)
+                        editText = property.GetValue(platformView) as Android.Widget.EditText;
+                    }
+                    else
+                    {
+                        var field = platformView.GetType().GetField("EditText");
+                        if (field != null)
                         {
-                            // Set the tint color of the arrow
-                            arrow.SetTint(androidColor);
-                            spinner.DropDownVerticalOffset = 0;
+                            editText = field.GetValue(platformView) as Android.Widget.EditText;
+                        }
+                    }
+                    
+                    if (editText != null)
+                    {
+                        // Set the right compound drawable's tint (the dropdown arrow)
+                        var drawables = editText.GetCompoundDrawables();
+                        if (drawables != null && drawables.Length > 2 && drawables[2] != null)
+                        {
+                            drawables[2].SetTint(androidColor);
+                        }
+                    }
+                }
+                catch {
+                    // Fallback approach if the above doesn't work
+                    if (platformView is Android.Views.View view)
+                    {
+                        // Use BackgroundTintList which is supported on Android 21+
+                        if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Lollipop)
+                        {
+                            view.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(new Android.Graphics.Color(androidColor));
                         }
                     }
                 }
